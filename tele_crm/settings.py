@@ -245,6 +245,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Ensure logs directory exists for production file logging
+LOG_DIR = BASE_DIR / 'logs'
+if not LOG_DIR.exists():
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 # Logging - Structured for production
 LOGGING = {
     'version': 1,
@@ -261,7 +266,7 @@ LOGGING = {
         'file': {
             'level': 'WARNING',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs/security.log',
+            'filename': LOG_DIR / 'security.log',
             'maxBytes': 1024 * 1024 * 5,  # 5MB
             'backupCount': 5,
             'formatter': 'standard',
