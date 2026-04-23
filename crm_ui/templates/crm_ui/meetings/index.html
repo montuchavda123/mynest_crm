@@ -1,0 +1,283 @@
+{% extends 'crm_ui/base.html' %}
+{% load static %}
+
+{% block title %}Meetings | MyNest CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0 fw-bold">Meetings & Visits</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary shadow-sm btn-sm px-4" data-bs-toggle="modal"
+            data-bs-target="#scheduleMeetingModal">
+            <i class="fas fa-calendar-plus me-2"></i> Schedule Meeting
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-3">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <h6 class="fw-bold mb-4">Filters</h6>
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold">Meeting Type</label>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" checked id="typeSite">
+                    <label class="form-check-label text-sm" for="typeSite">Site Visit</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" checked id="typeOffice">
+                    <label class="form-check-label text-sm" for="typeOffice">Office Meeting</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" checked id="typePhone">
+                    <label class="form-check-label text-sm" for="typePhone">Phone Consultation</label>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label text-muted small fw-bold">Date Range</label>
+                <select class="form-select form-select-sm">
+                    <option>Today</option>
+                    <option>This Week</option>
+                    <option>This Month</option>
+                    <option>All Time</option>
+                </select>
+            </div>
+            <button class="btn btn-primary btn-sm w-100 mt-auto" id="applyFilter">Apply Filter</button>
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        <!-- Upcoming Meetings List -->
+        <h6 class="fw-bold mb-3 d-flex align-items-center"><i class="fas fa-clock text-warning me-2"></i> Upcoming
+            Meetings</h6>
+
+        <div class="row g-3 mb-5">
+            {% for meeting in meetings %}
+            <div class="col-md-12 meeting-card" data-type="{{ meeting.type }}" data-date="{{ meeting.date|date:'Y-m-d' }}">
+                <div class="card border-0 shadow-sm p-0 mb-3 overflow-hidden">
+                    <div class="row g-0">
+                        <div class="col-auto 
+                            {% if meeting.type == 'SITE' %}bg-warning{% elif meeting.type == 'OFFICE' %}bg-primary{% else %}bg-info{% endif %} 
+                            p-2 d-flex align-items-center" style="width: 8px;"></div>
+                        <div class="col p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-3">
+                                    <h6 class="fw-bold mb-0">{{ meeting.date|date:"h:i A" }}</h6>
+                                    <small class="text-muted">{{ meeting.date|date:"M d, Y" }}</small>
+                                </div>
+                                <div class="col-md-5">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm me-3 border rounded-circle p-2 
+                                            {% if meeting.type == 'SITE' %}text-warning{% elif meeting.type == 'OFFICE' %}text-primary{% else %}text-info{% endif %} 
+                                            d-flex align-items-center justify-content-center"
+                                            style="width: 40px; height: 40px;">
+                                            <i
+                                                class="fas 
+                                                {% if meeting.type == 'SITE' %}fa-map-marker-alt{% elif meeting.type == 'OFFICE' %}fa-building{% else %}fa-phone{% endif %}">
+                                            </i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">{{ meeting.get_type_display }}</h6>
+                                            <small class="text-muted">with <a
+                                                    href="{% url 'lead_detail' meeting.lead.id %}"
+                                                    class="text-decoration-none fw-bold">{{ meeting.lead.name
+                                                    }}</a></small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <button class="btn btn-light border btn-sm px-3 me-2 reschedule-btn" data-meeting-id="{{ meeting.id }}" data-current-date="{{ meeting.date|date:'Y-m-d' }}" data-current-time="{{ meeting.date|date:'H:i' }}" data-bs-toggle="modal" data-bs-target="#rescheduleModal">Reschedule</button>
+                                    <button class="btn btn-outline-primary btn-sm px-3 view-notes-btn" data-notes="{{ meeting.notes|escapejs }}" data-bs-toggle="modal" data-bs-target="#notesModal">View Notes</button>
+                                    <form action="{% url 'delete_meeting' meeting.id %}" method="POST" class="d-inline ms-2" onsubmit="return confirm('Delete this meeting?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger px-3">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-md-12">
+                <div class="card border-0 shadow-sm p-5 text-center text-muted">
+                    No meetings scheduled yet.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Calendar Placeholder -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="card-title mb-0 fw-bold">Calendar View</h6>
+            </div>
+            <div class="card-body p-5 text-center">
+                <i class="fas fa-calendar-alt text-muted fa-3x mb-3"></i>
+                <h6 class="fw-bold text-muted">Calendar Module Interface</h6>
+                <p class="small text-muted mb-0">Full interactive calendar will be initialized here.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Meeting Modal -->
+<div class="modal fade" id="scheduleMeetingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 bg-light">
+                <h5 class="modal-title fw-bold">New Meeting Schedule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'add_meeting' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Select Lead</label>
+                        <select name="lead" class="form-select" required>
+                            <option value="" selected disabled>Choose a lead...</option>
+                            {% for lead in leads %}
+                            <option value="{{ lead.id }}">{{ lead.name }} (#LD{{ lead.id|stringformat:"04d" }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Meeting Type</label>
+                        <select name="type" class="form-select">
+                            <option value="SITE">Site Visit</option>
+                            <option value="OFFICE">Office Meeting</option>
+                            <option value="PHONE">Phone Call</option>
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Date</label>
+                            <input type="date" name="date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Time</label>
+                            <input type="time" name="time" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold">Meeting Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Agenda or location details..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-primary w-100 py-2">Schedule Meeting</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reschedule Meeting Modal -->
+<div class="modal fade" id="rescheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 bg-light">
+                <h5 class="modal-title fw-bold">Reschedule Meeting</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rescheduleForm" method="POST">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <input type="hidden" id="rescheduleMeetingId" name="meeting_id">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">New Date</label>
+                            <input type="date" id="rescheduleDate" name="date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">New Time</label>
+                            <input type="time" id="rescheduleTime" name="time" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-primary w-100 py-2">Reschedule Meeting</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 bg-light">
+                <h5 class="modal-title fw-bold">Meeting Notes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p id="meetingNotes"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('applyFilter').addEventListener('click', function() {
+    const typeSite = document.getElementById('typeSite').checked;
+    const typeOffice = document.getElementById('typeOffice').checked;
+    const typePhone = document.getElementById('typePhone').checked;
+    const dateRange = document.querySelector('select.form-select').value;
+    
+    const cards = document.querySelectorAll('.meeting-card');
+    const now = new Date();
+    
+    cards.forEach(card => {
+        const type = card.getAttribute('data-type');
+        const dateStr = card.getAttribute('data-date');
+        const meetingDate = new Date(dateStr);
+        
+        let typeMatch = false;
+        if ((type === 'SITE' && typeSite) || (type === 'OFFICE' && typeOffice) || (type === 'PHONE' && typePhone)) {
+            typeMatch = true;
+        }
+        
+        let dateMatch = false;
+        if (dateRange === 'All Time') {
+            dateMatch = true;
+        } else if (dateRange === 'Today') {
+            dateMatch = meetingDate.toDateString() === now.toDateString();
+        } else if (dateRange === 'This Week') {
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - now.getDay());
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            dateMatch = meetingDate >= weekStart && meetingDate <= weekEnd;
+        } else if (dateRange === 'This Month') {
+            dateMatch = meetingDate.getMonth() === now.getMonth() && meetingDate.getFullYear() === now.getFullYear();
+        }
+        
+        if (typeMatch && dateMatch) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+document.querySelectorAll('.reschedule-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const meetingId = this.getAttribute('data-meeting-id');
+        const currentDate = this.getAttribute('data-current-date');
+        const currentTime = this.getAttribute('data-current-time');
+        document.getElementById('rescheduleMeetingId').value = meetingId;
+        document.getElementById('rescheduleDate').value = currentDate;
+        document.getElementById('rescheduleTime').value = currentTime;
+        document.getElementById('rescheduleForm').action = `/meetings/${meetingId}/reschedule/`;
+    });
+});
+
+document.querySelectorAll('.view-notes-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const notes = this.getAttribute('data-notes');
+        document.getElementById('meetingNotes').textContent = notes || 'No notes available.';
+    });
+});
+</script>
+{% endblock %}

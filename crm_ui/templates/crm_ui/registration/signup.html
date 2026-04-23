@@ -1,0 +1,101 @@
+{% extends 'crm_ui/registration/auth_base.html' %}
+
+{% block title %}Create Account | MyNest CRM{% endblock %}
+{% block panel_icon %}<i class="fas fa-rocket"></i>{% endblock %}
+{% block panel_title %}Get Started{% endblock %}
+{% block panel_text %}Create your account to start managing leads, scheduling meetings, and generating professional quotations.{% endblock %}
+
+{% block form_content %}
+<h3>Create your account</h3>
+<p class="subtitle">Join the MyNest CRM platform.</p>
+
+<!-- Google Sign-Up -->
+<div class="google-btn-wrap" id="googleSignUpBtn"></div>
+<div class="auth-divider">or register with email</div>
+
+<form action="{% url 'signup' %}" method="POST" autocomplete="off">
+    {% csrf_token %}
+    <div class="form-floating">
+        <input type="text" name="full_name" class="form-control" id="fullName" placeholder="Full Name" required autocomplete="off">
+        <label for="fullName"><i class="fas fa-id-card me-2"></i>Full Name</label>
+    </div>
+    <div class="form-floating">
+        <input type="text" name="username" class="form-control" id="username" placeholder="Username" required autocomplete="off">
+        <label for="username"><i class="fas fa-user me-2"></i>Username</label>
+    </div>
+    <div class="form-floating">
+        <input type="email" name="email" class="form-control" id="email" placeholder="Email" required autocomplete="off">
+        <label for="email"><i class="fas fa-envelope me-2"></i>Email Address</label>
+    </div>
+    <div class="form-floating password-wrap">
+        <input type="password" name="password" class="form-control" id="password" placeholder="Password" required minlength="8" autocomplete="new-password">
+        <label for="password"><i class="fas fa-lock me-2"></i>Password</label>
+        <button type="button" class="toggle-pw" onclick="togglePassword('password', this)"><i class="far fa-eye"></i></button>
+    </div>
+    <div class="form-floating password-wrap">
+        <input type="password" name="confirm_password" class="form-control" id="confirmPassword" placeholder="Confirm" required autocomplete="new-password">
+        <label for="confirmPassword"><i class="fas fa-shield-alt me-2"></i>Confirm Password</label>
+        <button type="button" class="toggle-pw" onclick="togglePassword('confirmPassword', this)"><i class="far fa-eye"></i></button>
+    </div>
+    <div class="info-notice">
+        <i class="fas fa-info-circle"></i>
+        New accounts require admin approval before access.
+    </div>
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="terms" required style="border-radius: 4px;">
+        <label class="form-check-label" for="terms" style="font-size: 0.85rem; color: var(--muted);">
+            I agree to the <a href="#" class="auth-link">Terms & Conditions</a>
+        </label>
+    </div>
+    <button type="submit" class="btn-auth">Create Account</button>
+</form>
+
+<div class="auth-footer">
+    Already have an account? <a href="{% url 'two_factor:login' %}" class="auth-link">Sign in</a>
+</div>
+
+<!-- Hidden form for Google credential -->
+<form id="googleCredentialForm" method="POST" action="{% url 'google_login' %}" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="credential" id="googleCredentialInput">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+    function togglePassword(id, btn) {
+        const input = document.getElementById(id);
+        const icon = btn.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+
+    function handleGoogleCredential(response) {
+        document.getElementById('googleCredentialInput').value = response.credential;
+        document.getElementById('googleCredentialForm').submit();
+    }
+
+    window.addEventListener('load', function() {
+        const checkGSI = setInterval(function() {
+            if (typeof google !== 'undefined' && google.accounts) {
+                clearInterval(checkGSI);
+                google.accounts.id.initialize({
+                    client_id: '{{ GOOGLE_CLIENT_ID }}',
+                    callback: handleGoogleCredential,
+                    ux_mode: 'popup',
+                });
+                google.accounts.id.renderButton(
+                    document.getElementById('googleSignUpBtn'),
+                    { type: 'standard', theme: 'outline', size: 'large', text: 'signup_with', shape: 'rectangular', width: 380 }
+                );
+            }
+        }, 100);
+    });
+</script>
+{% endblock %}

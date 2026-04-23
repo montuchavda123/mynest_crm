@@ -1,0 +1,19 @@
+{% load i18n %}
+{% for field in form %}
+  <div class="form-row {% if field.errors %}has-error{% endif %}">
+    {{ field.label_tag }}
+    {{ field }}
+    {% if field.help_text %}
+      <div class="small text-muted mt-1">{{ field.help_text|safe }}</div>
+    {% endif %}
+    {% if field.errors %}
+      {{ field.errors }}
+    {% endif %}
+  </div>
+{% endfor %}
+
+{% if wizard.form.non_field_errors %}
+  <div class="alert alert-danger auth-alert">
+    {{ wizard.form.non_field_errors }}
+  </div>
+{% endif %}

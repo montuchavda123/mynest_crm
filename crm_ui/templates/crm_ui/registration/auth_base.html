@@ -1,0 +1,349 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MyNest CRM{% endblock %}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: rgba(99, 102, 241, 0.08);
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+            --surface: #ffffff;
+            --bg: #f1f5f9;
+            --text: #1e293b;
+            --muted: #94a3b8;
+            --border: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            position: relative;
+        }
+
+        /* Left decorative panel */
+        .auth-panel {
+            width: 45%;
+            height: 100vh;
+            background: var(--accent-gradient);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+            position: sticky;
+            top: 0;
+            overflow: hidden;
+        }
+        .auth-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 70%, rgba(255,255,255,0.1) 0%, transparent 50%);
+            animation: shimmer 8s ease-in-out infinite alternate;
+        }
+        @keyframes shimmer {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(5%, -5%); }
+        }
+        .auth-panel .panel-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            color: #fff;
+        }
+        .auth-panel .panel-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 1.5rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .auth-panel h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+        .auth-panel p {
+            font-size: 0.95rem;
+            opacity: 0.85;
+            line-height: 1.6;
+            max-width: 300px;
+        }
+        .panel-dots {
+            position: absolute;
+            bottom: 2rem;
+            display: flex;
+            gap: 6px;
+            z-index: 2;
+        }
+        .panel-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+        }
+        .panel-dots span.active {
+            background: #fff;
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        /* Right form area */
+        .auth-form-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            min-height: 100vh;
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 420px;
+        }
+        .auth-card .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 2rem;
+        }
+        .auth-card .brand i {
+            font-size: 1.3rem;
+        }
+        .auth-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+        .auth-card .subtitle {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Google button container */
+        .google-btn-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Divider */
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--muted);
+            font-size: 0.8rem;
+            margin: 1rem 0 1.25rem;
+        }
+        .auth-divider::before, .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Form styles */
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+        .form-floating > .form-control {
+            border: 1.5px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1rem 0.875rem;
+            height: 3.25rem;
+            font-size: 0.875rem;
+            background: var(--surface);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .form-floating > .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        .form-floating > label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            padding: 0.875rem;
+        }
+
+        .btn-auth {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: var(--accent-gradient);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        .btn-auth:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+        .btn-auth:active {
+            transform: translateY(0);
+        }
+
+        .auth-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.15s;
+        }
+        .auth-link:hover {
+            color: var(--primary-dark);
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+            color: var(--muted);
+        }
+
+        /* Alert styling */
+        .auth-alert {
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 0.85rem;
+            padding: 0.625rem 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Info card */
+        .info-notice {
+            background: var(--primary-light);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 0.75rem;
+            padding: 0.625rem 0.875rem;
+            font-size: 0.8rem;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Password toggle */
+        .password-wrap {
+            position: relative;
+        }
+        .password-wrap .toggle-pw {
+            position: absolute;
+            right: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            z-index: 5;
+        }
+
+        /* Status card (for done / complete pages) */
+        .status-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 1.5rem;
+        }
+        .status-icon.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+        .status-icon.info {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        .status-icon.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        @media (max-width: 992px) {
+            .auth-panel { display: none; }
+            body { background: var(--surface); }
+            .auth-form-area { padding: 1.5rem; }
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- Decorative Side Panel -->
+    <div class="auth-panel">
+        <div class="panel-content">
+            <div class="panel-icon">
+                {% block panel_icon %}<i class="fas fa-headset"></i>{% endblock %}
+            </div>
+            <h2>{% block panel_title %}MyNest CRM{% endblock %}</h2>
+            <p>{% block panel_text %}Streamline your sales pipeline, manage leads efficiently, and close deals faster with our intelligent CRM platform.{% endblock %}</p>
+        </div>
+        <div class="panel-dots">
+            <span class="active"></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Form Area -->
+    <div class="auth-form-area">
+        <div class="auth-card">
+            <div class="brand">
+                <i class="fas fa-headset"></i> MyNest CRM
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert auth-alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" style="font-size: 0.65rem;" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block form_content %}{% endblock %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

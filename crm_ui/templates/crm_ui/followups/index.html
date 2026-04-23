@@ -1,0 +1,109 @@
+{% extends 'crm_ui/base.html' %}
+{% load static %}
+
+{% block title %}Follow-up Tracker | MyNest CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0 fw-bold">Follow-up Tracker</h2>
+    <div class="d-flex gap-2">
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle px-3" type="button" data-bs-toggle="dropdown">
+                Filter by Status
+            </button>
+            <ul class="dropdown-menu shadow border-0">
+                <li><a class="dropdown-item" href="#">All</a></li>
+                <li><a class="dropdown-item" href="#">Pending</a></li>
+                <li><a class="dropdown-item" href="#">Today</a></li>
+                <li><a class="dropdown-item" href="#">Overdue</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <!-- Stats Cards for Follow-ups -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-4 bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1 opacity-75">Today's Follow-ups</h6>
+                    <h3 class="fw-bold mb-0">12</h3>
+                </div>
+                <div class="stat-card-icon bg-white bg-opacity-25">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-4 bg-danger text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1 opacity-75">Overdue Tasks</h6>
+                    <h3 class="fw-bold mb-0">5</h3>
+                </div>
+                <div class="stat-card-icon bg-white bg-opacity-25">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-4 bg-success text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1 opacity-75">Completed (Weekly)</h6>
+                    <h3 class="fw-bold mb-0">48</h3>
+                </div>
+                <div class="stat-card-icon bg-white bg-opacity-25">
+                    <i class="fas fa-check-double"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Follow-up List -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3 px-4">
+        <h5 class="card-title mb-0 fw-bold">Active Reminders</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+            {% for followup in followups %}
+            <div class="list-group-item px-4 py-4 border-start border-5 
+                {% if followup.is_overdue %}border-danger bg-danger bg-opacity-10{% else %}border-primary bg-primary bg-opacity-10{% endif %} 
+                mb-2 border-top-0 border-end-0 border-bottom-0">
+                <div class="row align-items-center">
+                    <div class="col-md-1 text-center">
+                        <span class="badge 
+                            {% if followup.is_overdue %}bg-danger{% else %}bg-primary{% endif %} 
+                            p-2 rounded-circle">
+                            <i class="fas {% if followup.is_overdue %}fa-exclamation{% else %}fa-clock{% endif %}"></i>
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="fw-bold mb-0">{{ followup.lead.name }}</h6>
+                        <small class="{% if followup.is_overdue %}text-danger{% else %}text-primary{% endif %} fw-bold">
+                            {{ followup.date|date:"M d, Y • h:i A" }}
+                        </small>
+                    </div>
+                    <div class="col-md-5">
+                        <p class="text-sm text-muted mb-0">{{ followup.notes }}</p>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <a href="tel:{{ followup.lead.phone }}" class="btn btn-sm btn-outline-primary px-3 rounded-pill shadow-sm"><i class="fas fa-phone-alt me-1"></i> Call Now</a>
+                        <button class="btn btn-sm btn-link text-muted ms-2 px-0">Mark Done</button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="list-group-item px-4 py-5 text-center text-muted">
+                No active follow-up reminders.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

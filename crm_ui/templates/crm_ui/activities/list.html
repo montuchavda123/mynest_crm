@@ -1,0 +1,119 @@
+{% extends 'crm_ui/base.html' %}
+{% load static %}
+
+{% block title %}Activity Timeline | MyNest CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Activity Timeline</h2>
+        <p class="text-muted mb-0">Full history of all system events and user actions.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <form class="d-flex" method="GET">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Search activities..." value="{{ search_query }}">
+                <button class="btn btn-primary px-4" type="submit">Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 border-0 py-3">Timestamp</th>
+                        <th class="border-0 py-3">Lead</th>
+                        <th class="border-0 py-3">Action</th>
+                        <th class="border-0 py-3">Notes</th>
+                        <th class="border-0 py-3">Performed By</th>
+                        <th class="pe-4 border-0 py-3 text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in page_obj %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold">{{ activity.timestamp|date:"M d, Y" }}</div>
+                            <small class="text-muted">{{ activity.timestamp|date:"h:i A" }}</small>
+                        </td>
+                        <td>
+                            {% if activity.lead %}
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm bg-primary-subtle text-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-weight: bold; font-size: 0.8rem;">
+                                    {{ activity.lead.name|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ activity.lead.name }}</div>
+                                    <small class="text-muted">{{ activity.lead.phone }}</small>
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">System Level</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if 'Created' in activity.action %}bg-success-subtle text-success{% elif 'Approval' in activity.action or 'Approved' in activity.action %}bg-indigo-subtle text-indigo{% elif 'Meeting' in activity.action %}bg-warning-subtle text-warning{% else %}bg-primary-subtle text-primary{% endif %} border-0">
+                                {{ activity.action }}
+                            </span>
+                        </td>
+                        <td class="text-wrap" style="max-width: 300px;">
+                            <small class="text-muted">{{ activity.notes|default:"-" }}</small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="https://ui-avatars.com/api/?name={{ activity.performed_by.username }}&background=random&size=24" class="rounded-circle me-2" alt="UID">
+                                <small class="fw-bold">{{ activity.performed_by.get_full_name|default:activity.performed_by.username }}</small>
+                            </div>
+                        </td>
+                        <td class="pe-4 text-end">
+                            {% if activity.lead %}
+                            <a href="{% url 'lead_detail' activity.lead.id %}" class="btn btn-sm btn-light border-0"><i class="fas fa-eye me-1"></i> View</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-history fa-3x mb-3 opacity-25"></i>
+                            <p>No activities found matching your criteria.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center p-4">
+        <div class="text-muted small">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries
+        </div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0 shadow-sm">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}"><i class="fas fa-chevron-left"></i></a></li>
+                {% endif %}
+                
+                {% for i in page_obj.paginator.page_range %}
+                    {% if page_obj.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}"><i class="fas fa-chevron-right"></i></a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=tele_crm_db
+      - POSTGRES_USER=crm_admin
+      - POSTGRES_PASSWORD=crm_password
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-ebao-sd9d3!iz(%6elk71v#7g(a(2vt&zu8p**%*g7k$41us+y
+      - DB_NAME=tele_crm_db
+      - DB_USER=crm_admin
+      - DB_PASSWORD=crm_password
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

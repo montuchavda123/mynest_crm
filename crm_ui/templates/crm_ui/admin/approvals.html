@@ -1,0 +1,170 @@
+{% extends 'crm_ui/admin/admin_base.html' %}
+
+{% block title %}User Approvals | Admin Panel{% endblock %}
+{% block page_title %}User Approvals{% endblock %}
+
+{% block content %}
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card admin-stat-card">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+                <div class="stat-icon purple"><i class="fas fa-users"></i></div>
+                <div>
+                    <div class="h4 fw-bold mb-0">{{ users.count }}</div>
+                    <div class="text-muted small">Total Users</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card admin-stat-card">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+                <div class="stat-icon amber"><i class="fas fa-clock"></i></div>
+                <div>
+                    <div class="h4 fw-bold mb-0">{{ pending_count }}</div>
+                    <div class="text-muted small">Pending Approval</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card admin-stat-card">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                <div>
+                    <div class="h4 fw-bold mb-0">{{ users.count|add:"-"|add:pending_count }}</div>
+                    <div class="text-muted small">Approved Users</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card border-0 shadow-sm" style="border-radius: 1rem;">
+    <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center" style="border-radius: 1rem 1rem 0 0;">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-user-shield me-2 text-primary"></i>All Registered Users</h6>
+        {% if pending_count > 0 %}
+        <span class="badge bg-warning text-dark">{{ pending_count }} pending</span>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3 text-muted small text-uppercase" style="font-size: 0.7rem; letter-spacing: 1px;">User</th>
+                        <th class="py-3 text-muted small text-uppercase" style="font-size: 0.7rem; letter-spacing: 1px;">Email</th>
+                        <th class="py-3 text-muted small text-uppercase" style="font-size: 0.7rem; letter-spacing: 1px;">Role</th>
+                        <th class="py-3 text-muted small text-uppercase" style="font-size: 0.7rem; letter-spacing: 1px;">Auth Method</th>
+                        <th class="py-3 text-muted small text-uppercase" style="font-size: 0.7rem; letter-spacing: 1px;">Joined</th>
+                        <th class="py-3 text-muted small text-uppercase" style="font-size: 0.7rem; letter-spacing: 1px;">Status</th>
+                        <th class="py-3 pe-4 text-muted small text-uppercase text-end" style="font-size: 0.7rem; letter-spacing: 1px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr class="{% if not u.is_approved and u.is_active %}table-warning{% endif %}">
+                        <td class="ps-4 py-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="https://ui-avatars.com/api/?name={{ u.get_full_name|default:u.username }}&background=8b5cf6&color=fff&size=32" class="rounded-circle" width="32" height="32" alt="Avatar">
+                                <div>
+                                    <div class="fw-bold" style="font-size: 0.875rem;">{{ u.get_full_name|default:u.username }}</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">@{{ u.username }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="font-size: 0.85rem;">{{ u.email|default:"—" }}</td>
+                        <td><span class="badge badge-role fw-normal px-2 py-1" style="font-size: 0.7rem;">{{ u.get_role_display }}</span></td>
+                        <td style="font-size: 0.8rem;">
+                            {% if u.google_id %}
+                                <span class="text-primary"><i class="fab fa-google me-1"></i>Google</span>
+                            {% else %}
+                                <span class="text-muted"><i class="fas fa-key me-1"></i>Password</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.8rem;" class="text-muted">{{ u.date_joined|date:"M d, Y" }}</td>
+                        <td>
+                            {% if u.is_approved %}
+                                <span class="badge badge-approved fw-normal px-2 py-1" style="font-size: 0.7rem;"><i class="fas fa-check me-1"></i>Approved</span>
+                            {% elif u.is_active %}
+                                <span class="badge badge-pending fw-normal px-2 py-1" style="font-size: 0.7rem;"><i class="fas fa-clock me-1"></i>Pending</span>
+                            {% else %}
+                                <span class="badge badge-rejected fw-normal px-2 py-1" style="font-size: 0.7rem;"><i class="fas fa-times me-1"></i>Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td class="pe-4 text-end">
+                            <div class="d-flex justify-content-end gap-1">
+                                {% if not u.is_approved and u.is_active %}
+                                    <form method="post" action="{% url 'admin_approve_user' u.id 'approve' %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-success px-2" style="font-size: 0.7rem;" title="Approve">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'admin_approve_user' u.id 'reject' %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger px-2" style="font-size: 0.7rem;" title="Reject">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                {% elif not u.is_active %}
+                                    <form method="post" action="{% url 'admin_approve_user' u.id 'approve' %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-success px-2" style="font-size: 0.7rem;" title="Re-approve">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                
+                                {% if u.id != user.id %}
+                                <button type="button" class="btn btn-sm btn-outline-primary px-2" style="font-size: 0.7rem;" 
+                                        data-bs-toggle="modal" data-bs-target="#editRoleModal{{ u.id }}" title="Change Role">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+
+                                <!-- Edit Role Modal -->
+                                <div class="modal fade" id="editRoleModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                                        <div class="modal-content border-0 shadow">
+                                            <div class="modal-header border-0 pb-0">
+                                                <h6 class="modal-title fw-bold">Update Role</h6>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form method="post" action="{% url 'admin_update_user_role' u.id %}">
+                                                {% csrf_token %}
+                                                <div class="modal-body text-start">
+                                                    <p class="small text-muted mb-3">Change role for <strong>{{ u.username }}</strong></p>
+                                                    <select name="role" class="form-select form-select-sm">
+                                                        <option value="ADMIN" {% if u.role == 'ADMIN' %}selected{% endif %}>Admin</option>
+                                                        <option value="MANAGER" {% if u.role == 'MANAGER' %}selected{% endif %}>Manager</option>
+                                                        <option value="SALES" {% if u.role == 'SALES' %}selected{% endif %}>Sales Executive</option>
+                                                    </select>
+                                                </div>
+                                                <div class="modal-footer border-0 pt-0">
+                                                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fas fa-users fa-3x mb-3 opacity-25"></i>
+                            <p class="mb-0">No users found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

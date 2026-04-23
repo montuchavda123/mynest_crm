@@ -1,0 +1,439 @@
+{% extends 'crm_ui/base.html' %}
+
+{% block title %}Create Dynamic Quotation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title mb-0">Create Quotation - {{ lead.name }}</h2>
+    <a href="{% url 'lead_detail' lead.id %}" class="btn btn-light border btn-sm">Back to Lead</a>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0 fw-bold">Client Information</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for field in form %}
+                {% if field.name != 'selected_package' and field.name != 'base_amount' and field.name != 'package_amount' and field.name != 'project_area_sqft' and field.name != 'design_theme' and field.name != 'execution_timeline' and field.name != 'scope_of_work' and field.name != 'exclusions' and field.name != 'payment_terms' and field.name != 'warranty_terms' %}
+                <div
+                    class="{% if field.field.widget.input_type == 'textarea' or field.name == 'notes' %}col-12{% else %}col-md-6{% endif %}">
+                    <label class="form-label small fw-bold text-muted mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<div class="text-danger small">{{ field.errors|join:", " }}</div>{% endif %}
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold">Room Wise Items</h6>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="addBedroomBtn"><i
+                        class="fas fa-bed me-1"></i> Add Bedroom</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="addSectionBtn">+ Add Section</button>
+            </div>
+        </div>
+        <div class="card-body" id="sectionsContainer"></div>
+    </div>
+
+
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0 fw-bold">Interior Package Pricing</h6>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered align-middle mb-3">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Package</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-center">Select</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>LAMINATED (BASIC-ECO)</strong></td>
+                        <td class="text-end">
+                            <input type="number" min="0" step="0.01" id="basicAmountInput"
+                                class="form-control form-control-sm text-end" value="0.00">
+                        </td>
+                        <td class="text-center"><input type="radio" name="package_selector" value="BASIC" checked></td>
+                    </tr>
+                    <tr>
+                        <td><strong>DUCO/VENEER/LAMINATE (Semi-Luxury Interior)</strong></td>
+                        <td class="text-end fw-bold" id="semiAmountView">0.00</td>
+                        <td class="text-center"><input type="radio" name="package_selector" value="SEMI"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>PU-DUCO/VENEER/ACRYLIC/H.LAM (Full-Luxury Interior)</strong></td>
+                        <td class="text-end fw-bold" id="fullAmountView">0.00</td>
+                        <td class="text-center"><input type="radio" name="package_selector" value="FULL"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="text-end">
+                <div class="text-muted small">Selected Package Amount</div>
+                <div class="h5 text-primary mb-0" id="selectedPackageAmountView">0.00</div>
+            </div>
+        </div>
+    </div>
+
+    {{ form.selected_package }}
+    {{ form.base_amount }}
+    {{ form.package_amount }}
+
+    <div class="d-flex gap-2 mb-4">
+        <button class="btn btn-secondary" type="submit" name="action" value="save_draft">Save Draft</button>
+        <button class="btn btn-primary" type="submit" name="action" value="submit_for_approval">Send for
+            Approval</button>
+        <button class="btn btn-outline-success" type="submit" name="action" value="generate_pdf">Generate PDF</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sectionsContainer = document.getElementById('sectionsContainer');
+        const defaultSections = ['Foyer', 'Living Area', 'Kitchen', 'Bedroom 1'];
+        const basicAmountInput = document.getElementById('basicAmountInput');
+        const semiAmountView = document.getElementById('semiAmountView');
+        const fullAmountView = document.getElementById('fullAmountView');
+        const selectedPackageAmountView = document.getElementById('selectedPackageAmountView');
+        const hiddenSelectedPackage = document.getElementById('id_selected_package');
+        const hiddenBaseAmount = document.getElementById('id_base_amount');
+        const hiddenPackageAmount = document.getElementById('id_package_amount');
+        const packageSelectorInputs = document.querySelectorAll('input[name="package_selector"]');
+        let basicAmountManual = false;
+
+        const sectionItemCatalog = {
+            'foyer': [
+                { name: 'Safty Door (Jaali Door)', remark: '' },
+                { name: 'Wall Panelling on Around Safty Door', remark: '' },
+                { name: 'Shoe Cabinet', remark: '' },
+                { name: 'Electrical Points for Decorave lights', remark: '' }
+            ],
+            'living area': [
+                { name: 'Tv mount panelling', remark: '' },
+                { name: 'Base cabinate', remark: '' },
+                { name: 'Wall bookshlave or storage', remark: '' },
+                { name: 'Partition', remark: '' },
+                { name: '3d Wall Panelling With Punning', remark: '' },
+                { name: 'Italian Texture & Wallpaper on Wallpanelling', remark: '' },
+                { name: 'Curtains and Blinds', remark: '10K' },
+                { name: 'Air conditioner and Curtain Panel', remark: '' },
+                { name: 'Centre Table', remark: '10K' },
+                { name: 'Sofa', remark: '25k' },
+                { name: 'Lounger Sofa', remark: '18k' },
+                { name: 'Puffy Sofa 2 nos', remark: '7k' },
+                { name: 'Electrical Points for Decorave lights', remark: '' },
+                { name: 'Panel and COB lights', remark: '' },
+                { name: 'Profile and Rope Lights', remark: '' }
+            ],
+            'kitchen': [
+                { name: 'Floor Cabinet', remark: '' },
+                { name: 'Tendum Cabinet', remark: '5 NOS', hasNos: true },
+                { name: 'Bottle Pullout', remark: '' },
+                { name: 'Cutlery tray', remark: '' },
+                { name: 'Thali Stands', remark: '' },
+                { name: 'Wall Cabinet', remark: '' },
+                { name: 'Profile Shutters', remark: '4 NOS', hasNos: true },
+                { name: 'Loft (Maliya)', remark: '' },
+                { name: 'Utility Wall Cabinet', remark: '' },
+                { name: 'Crockery Floor Cabinet', remark: '' },
+                { name: 'Crockery Wall Cabinet', remark: '' },
+                { name: 'Crockery Wall Dado panel', remark: '' },
+                { name: 'Dining Table', remark: '40k' },
+                { name: 'Italian Texture & Wallpaper on Wallpanelling', remark: '' },
+                { name: 'Electrical Points for Decorave lights', remark: '' },
+                { name: 'Panel and COB lights', remark: '' },
+                { name: 'Profile and Rope Light', remark: '' }
+            ],
+            'bedroom 1': [
+    { name: 'Bed with Hydraulic Storage', remark: '' },
+    { name: 'Cushioned Headboard', remark: '' },
+    { name: 'Mattress 6"', remark: '10K' },
+    { name: 'Bedside Table', remark: '' },
+    { name: 'Air Conditioner and Curtain Panel', remark: '' },
+    { name: 'Armoire (Wardrobe)', remark: '' },
+    { name: 'Loft (Maliya)', remark: '' },
+    { name: '3D Wall Panelling with Punning', remark: '' },
+    { name: 'Italian Texture & Wallpaper on Wall Panelling', remark: '' },
+    { name: 'Dressing Mirror', remark: '' },
+
+    // ✅ Missing items added
+    { name: 'Dressing Storage', remark: '' },
+    { name: 'Chest of Drawers', remark: '' },
+
+    { name: 'Washroom Vanity Unit', remark: '' },
+    { name: 'Washroom Wall Base Mirror', remark: '' },
+    { name: 'Curtains and Blinds', remark: '10K' },
+    { name: 'Panel and COB Lights', remark: '' },
+    { name: 'Profile and Rope Light', remark: '' },
+    { name: 'Additional Plugs for Side Table and Study Table', remark: '' },
+    { name: 'Electrical Points for Decorative Lights', remark: '' },
+
+    // ✅ Missing item added
+    { name: 'Puffy Sofa', remark: '4K' }
+],
+            'mynest includings': [
+                { name: 'Space management', remark: '100000' },
+                { name: '3D (360) Designing', remark: '' },
+                { name: '2 Layers Execution', remark: '' },
+                { name: 'Labour Handling', remark: '' },
+                { name: 'Debris Cleaning', remark: '' },
+                { name: 'Basic Deep Cleaining', remark: '' },
+                { name: 'Floor Cover', remark: '' },
+                { name: '2 years of Service Warranty', remark: '' }
+            ]
+        };
+
+        // Add same items for other bedrooms
+        sectionItemCatalog['bedroom 2'] = JSON.parse(JSON.stringify(sectionItemCatalog['bedroom 1']));
+        sectionItemCatalog['bedroom 3'] = JSON.parse(JSON.stringify(sectionItemCatalog['bedroom 1']));
+
+        let sectionCounter = 1;
+        let isSyncingSelectAll = false;
+
+        function sectionOptions(sectionName) {
+            const key = (sectionName || '').toLowerCase().trim();
+            if (key.startsWith('bedroom 1')) return sectionItemCatalog['bedroom 1'] || [];
+            if (key.startsWith('bedroom 2')) return sectionItemCatalog['bedroom 2'] || [];
+            if (key.startsWith('bedroom 3')) return sectionItemCatalog['bedroom 3'] || [];
+            if (key.startsWith('bedroom')) return sectionItemCatalog['bedroom 1'] || [];
+            return sectionItemCatalog[key] || [];
+        }
+
+        function toggleBedroomButton(wrap) {
+            const nameInput = wrap.querySelector('input[name="section_name[]"]');
+            if (!nameInput) return;
+            const sectionName = nameInput.value.toLowerCase();
+            const bedBtn = wrap.querySelector('.add-bedroom-inside');
+            if (sectionName.startsWith('bedroom')) bedBtn.classList.remove('d-none'); else bedBtn.classList.add('d-none');
+        }
+
+        function addNextBedroom(afterElement = null) {
+            const bedroomCount = Array.from(document.querySelectorAll('input[name="section_name[]"]')).filter((input) => input.value.toLowerCase().startsWith('bedroom')).length;
+            addSection(`Bedroom ${bedroomCount + 1}`, afterElement);
+        }
+
+        function addSection(name = 'Section', afterElement = null) {
+            const idx = sectionCounter++;
+            const wrap = document.createElement('div');
+            wrap.className = 'section-block border rounded p-3 mb-3';
+            wrap.innerHTML = `
+            <input type="hidden" name="section_idx[]" value="${idx}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <input name="section_name[]" class="form-control form-control-sm w-50 fw-bold" value="${name}">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary add-bedroom-inside" title="Add Bedroom"><i class="fas fa-bed"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-item">+ Other (custom items)</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger del-section">x</button>
+                </div>
+            </div>
+            <div class="quick-selection mb-3 bg-light p-2 rounded small border">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="fw-bold text-muted">Quick selection:</div>
+                    <label class="small text-primary cursor-pointer mb-0" style="font-size: 0.75rem;">
+                        <input type="checkbox" class="select-all-items me-1"> Select All
+                    </label>
+                </div>
+                <div class="checklist-container d-flex flex-wrap gap-2"></div>
+            </div>
+            <table class="table table-sm table-bordered mb-0">
+                <thead><tr><th>No.</th><th>Description</th><th>Remarks</th><th></th></tr></thead>
+                <tbody class="item-body"></tbody>
+            </table>`;
+            if (afterElement) {
+                afterElement.after(wrap);
+            } else {
+                sectionsContainer.appendChild(wrap);
+            }
+
+            wrap.querySelector('.add-item').addEventListener('click', () => addItem(wrap.querySelector('.item-body'), idx, { name: '', remark: '' }));
+            wrap.querySelector('.add-bedroom-inside').addEventListener('click', () => addNextBedroom(wrap));
+            wrap.querySelector('.del-section').addEventListener('click', () => { wrap.remove(); updatePackagePricing(); });
+
+            const selectAll = wrap.querySelector('.select-all-items');
+            selectAll.addEventListener('change', function () {
+                isSyncingSelectAll = true;
+                const checkboxes = wrap.querySelectorAll('.quick-item-check');
+                checkboxes.forEach(cb => {
+                    if (cb.checked !== this.checked) {
+                        cb.checked = this.checked;
+                        cb.dispatchEvent(new Event('change'));
+                    }
+                });
+                isSyncingSelectAll = false;
+            });
+
+            const nameInput = wrap.querySelector('input[name="section_name[]"]');
+            nameInput.addEventListener('input', () => {
+                renderChecklist(wrap, idx);
+                toggleBedroomButton(wrap);
+            });
+
+            renderChecklist(wrap, idx);
+            toggleBedroomButton(wrap);
+        }
+
+        function renderChecklist(wrap, idx) {
+            const container = wrap.querySelector('.checklist-container');
+            const sectionName = wrap.querySelector('input[name="section_name[]"]').value;
+            const items = sectionOptions(sectionName);
+            const itemTable = wrap.querySelector('.item-body');
+
+            container.innerHTML = '';
+            items.forEach((item, itemIdx) => {
+                const label = document.createElement('label');
+                label.className = 'form-check-label d-flex align-items-center bg-white border px-2 py-1 rounded cursor-pointer me-1';
+                label.innerHTML = `<input type="checkbox" class="form-check-input me-1 quick-item-check" data-name="${item.name}"> ${item.name}`;
+
+                const checkbox = label.querySelector('input');
+                checkbox.addEventListener('change', function () {
+                    if (this.checked) {
+                        addItem(itemTable, idx, item, this);
+                    } else {
+                        const existingRow = Array.from(itemTable.children).find(row => row.dataset.catalogName === item.name);
+                        if (existingRow) existingRow.remove();
+                        updatePackagePricing();
+                    }
+
+                    // Update Select All state
+                    if (!isSyncingSelectAll) {
+                        const allChecks = Array.from(wrap.querySelectorAll('.quick-item-check'));
+                        const selectAll = wrap.querySelector('.select-all-items');
+                        selectAll.checked = allChecks.length > 0 && allChecks.every(c => c.checked);
+                    }
+                });
+                container.appendChild(label);
+            });
+
+            // Reset select all when checklist is re-rendered
+            wrap.querySelector('.select-all-items').checked = false;
+
+            if (items.length === 0) {
+                container.innerHTML = '<span class="text-muted italic">Type "Kitchen" or "Foyer" to see quick select options.</span>';
+            }
+
+            // Add "Other" checkbox
+            const otherLabel = document.createElement('label');
+            otherLabel.className = 'form-check-label d-flex align-items-center bg-white border px-2 py-1 rounded cursor-pointer text-primary fw-bold';
+            otherLabel.innerHTML = `<input type="checkbox" class="form-check-input me-1 other-item-check"> Other (custom items)`;
+            const otherCheckbox = otherLabel.querySelector('input');
+
+            otherCheckbox.addEventListener('change', function () {
+                if (this.checked) {
+                    this.createdRow = addItem(itemTable, idx, { name: '', remark: '' }, this);
+                } else {
+                    if (this.createdRow) {
+                        this.createdRow.remove();
+                        this.createdRow = null;
+                        updatePackagePricing();
+                    }
+                }
+            });
+            container.appendChild(otherLabel);
+        }
+
+        function addItem(body, idx, preData = null, checkboxSource = null) {
+            if (!body) return;
+            const row = document.createElement('tr');
+            if (preData) row.dataset.catalogName = preData.name;
+
+            row.innerHTML = `
+            <td><input name="item_number_${idx}[]" class="form-control form-control-sm" value="${body.children.length + 1}" style="width: 50px;"></td>
+            <td><input name="description_${idx}[]" class="form-control form-control-sm" value="${preData ? preData.name : ''}"></td>
+            <input type="hidden" name="unit_price_${idx}[]" value="0.00" class="item-price">
+            <td>
+                <div class="nos-selector ${preData && preData.hasNos ? '' : 'd-none'} mb-1">
+                    <select class="form-select form-select-sm tendum-nos">
+                        <option value="3">3 NOS</option>
+                        <option value="4">4 NOS</option>
+                        <option value="5" ${preData && preData.remark.includes('5') ? 'selected' : ''}>5 NOS</option>
+                        <option value="7">7 NOS</option>
+                    </select>
+                </div>
+                <input name="remarks_${idx}[]" class="form-control form-control-sm item-remarks" value="${preData ? preData.remark : ''}">
+            </td>
+            <td><button type="button" class="btn btn-sm btn-link text-danger del">x</button></td>`;
+            body.appendChild(row);
+
+            const remarksInput = row.querySelector('.item-remarks');
+            const nosSelector = row.querySelector('.nos-selector');
+            const tendumNos = row.querySelector('.tendum-nos');
+
+            row.querySelector('.del').addEventListener('click', () => {
+                row.remove();
+                if (checkboxSource) checkboxSource.checked = false;
+                // If deleted manually, we need to find the checkbox and uncheck it
+                const wrap = body.closest('.section-block');
+                const checkboxes = wrap.querySelectorAll('.quick-item-check');
+                checkboxes.forEach(cb => {
+                    if (cb.dataset.name === row.dataset.catalogName) cb.checked = false;
+                });
+                updatePackagePricing();
+            });
+
+            tendumNos.addEventListener('change', function () {
+                remarksInput.value = `${this.value} NOS`;
+            });
+            updatePackagePricing();
+            return row;
+        }
+
+        function selectedPackageCode() {
+            const checked = document.querySelector('input[name="package_selector"]:checked');
+            return checked ? checked.value : 'BASIC';
+        }
+        function updatePackagePricing() {
+            if (!basicAmountInput) return;
+            const autoBase = 0;
+            if (!basicAmountManual && autoBase > 0) {
+                basicAmountInput.value = autoBase.toFixed(2);
+            }
+            const base = parseFloat(basicAmountInput.value) || 0;
+            const semi = base + (base * 0.27);
+            const full = base + (base * 0.54);
+
+            const formatINR = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+
+            if (semiAmountView) semiAmountView.textContent = formatINR(semi);
+            if (fullAmountView) fullAmountView.textContent = formatINR(full);
+
+            const code = selectedPackageCode();
+            let selectedAmount = base;
+            if (code === 'SEMI') selectedAmount = semi;
+            if (code === 'FULL') selectedAmount = full;
+
+            if (selectedPackageAmountView) selectedPackageAmountView.textContent = formatINR(selectedAmount);
+            if (hiddenSelectedPackage) hiddenSelectedPackage.value = code;
+            if (hiddenBaseAmount) hiddenBaseAmount.value = base.toFixed(2);
+            if (hiddenPackageAmount) hiddenPackageAmount.value = selectedAmount.toFixed(2);
+        }
+
+        // Initialize default sections
+        defaultSections.forEach(section => addSection(section));
+
+        document.getElementById('addSectionBtn').addEventListener('click', () => addSection('Custom Section'));
+        document.getElementById('addBedroomBtn').addEventListener('click', () => addNextBedroom());
+        packageSelectorInputs.forEach((input) => input.addEventListener('change', updatePackagePricing));
+        basicAmountInput.addEventListener('input', () => {
+            basicAmountManual = true;
+            updatePackagePricing();
+        });
+        basicAmountInput.addEventListener('blur', () => {
+            const value = parseFloat(basicAmountInput.value) || 0;
+            basicAmountInput.value = value.toFixed(2);
+        });
+        updatePackagePricing();
+    });
+</script>
+{% endblock %}

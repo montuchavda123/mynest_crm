@@ -1,0 +1,338 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MyNest CRM{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'crm_ui/css/style.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3 class="brand"><i class="fas fa-rocket me-3"></i>MyNest CRM</h3>
+        </div>
+        <ul class="sidebar-nav">
+            <li class="nav-item">
+                <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'lead_list' %}" class="nav-link {% if 'lead' in request.path %}active{% endif %}">
+                    <i class="fas fa-users"></i> Lead Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'meetings' %}" class="nav-link {% if 'meetings' in request.path %}active{% endif %}">
+                    <i class="fas fa-calendar-alt"></i> Meetings
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'quotations' %}" class="nav-link {% if 'quotations' in request.path %}active{% endif %}">
+                    <i class="fas fa-file-invoice-dollar"></i> Quotations
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'site_visits' %}" class="nav-link {% if 'site-visits' in request.path %}active{% endif %}">
+                    <i class="fas fa-map-marker-alt"></i> Site Visits
+                </a>
+            </li>
+            {% if user.is_admin_role %}
+            <li class="nav-item mt-4">
+                <div class="px-3 small text-uppercase fw-bold text-muted mb-2" style="font-size: 0.65rem; letter-spacing: 0.05rem;">Administration</div>
+                <a href="{% url 'admin_dashboard' %}" class="nav-link text-primary fw-bold" style="background: rgba(99, 102, 241, 0.1);">
+                    <i class="fas fa-user-shield"></i> Admin Panel
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <nav class="navbar navbar-expand-lg sticky-top">
+            <div class="container-fluid">
+                <button class="btn btn-link link-dark d-md-none" id="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="ms-auto d-flex align-items-center">
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=6366f1&color=fff" class="rounded-circle me-2" width="32" height="32" alt="Avatar">
+                            <span class="d-none d-sm-inline">{{ user.get_full_name|default:user.username }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            {% if user.is_admin_role %}
+                            <li>
+                                <a class="dropdown-item fw-bold text-primary" href="{% url 'admin_dashboard' %}">
+                                    <i class="fas fa-user-shield me-2"></i> Admin Panel
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
+                            <li>
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt me-2"></i> Logout</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="page-body p-4">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm" role="alert">
+                        {% if message.tags == 'success' %}<i class="fas fa-check-circle me-2"></i>{% elif message.tags == 'error' %}<i class="fas fa-exclamation-circle me-2"></i>{% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+
+    <!-- Add Lead Modal (Global) -->
+    <div class="modal fade" id="addLeadModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0 bg-light p-4">
+                    <h5 class="modal-title fw-bold">Add New Lead</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Integrated Lead Internal Selection -->
+                    <div class="p-3 bg-light rounded-3 mb-4 border">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label small fw-bold mb-0 text-primary">Quick Search Imported Numbers</label>
+                            <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 text-muted" onclick="resetLeadForm()">
+                                <i class="fas fa-undo me-1"></i> Start Fresh Form
+                            </button>
+                        </div>
+                        <div class="dropdown">
+                            <input type="text" class="form-control form-control-sm mb-0" id="globalImportSearch" placeholder="Type phone or name to auto-fill..." autocomplete="off">
+                            <div class="dropdown-menu w-100 shadow border-0" id="globalImportList" style="max-height: 200px; overflow-y: auto;">
+                                {% for item in global_recent_imports %}
+                                <a class="dropdown-item py-2 px-3 border-bottom global-import-item" href="#" 
+                                   data-id="{{ item.id }}"
+                                   data-name="{{ item.name|default:'' }}"
+                                   data-phone="{{ item.phone }}"
+                                   data-email="{{ item.email|default:'' }}"
+                                   data-location="{{ item.location|default:'' }}"
+                                   data-budget="{{ item.budget|default:0 }}"
+                                   data-property-type="{{ item.property_type|default:'' }}"
+                                   data-execution-timeline="{{ item.execution_timeline|default:'' }}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="fw-bold">{{ item.phone }}</div>
+                                        {% if item.is_converted %}
+                                        <span class="badge bg-success-subtle text-success border-0 small" style="font-size: 0.65rem;">Inside CRM</span>
+                                        {% else %}
+                                        <span class="badge bg-primary-subtle text-primary border-0 small" style="font-size: 0.65rem;">New Import</span>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ item.name }}</small>
+                                </a>
+                                {% empty %}
+                                <div class="px-3 py-2 text-muted small">No imported numbers found</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div id="selectionStatus" class="mt-2 text-xs text-success fw-bold d-none">
+                            <i class="fas fa-check-circle me-1"></i> Data synced from import
+                        </div>
+                    </div>
+
+                    <form id="addLeadForm" action="{% url 'add_lead' %}" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="import_id" id="import_id_input">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Full Name</label>
+                                <input type="text" name="name" class="form-control" required placeholder="Enter name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Phone Number</label>
+                                <input type="tel" name="phone" class="form-control" required placeholder="+91 00000 00000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Email Address</label>
+                                <input type="email" name="email" class="form-control" placeholder="example@domain.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Source</label>
+                                <select name="source" class="form-select">
+                                    <option value="SOCIAL_MEDIA">Social Media</option>
+                                    <option value="WEBSITE">Website</option>
+                                    <option value="REFERRAL">Referral</option>
+                                    <option value="WALK_IN">Walk-in</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Property Type</label>
+                                <input type="text" name="property_type" class="form-control" placeholder="e.g. 3BHK, 2BHK">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Client Budget</label>
+                                <input type="number" name="budget" class="form-control" placeholder="Approximate budget" step="0.01">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Execution Timeline</label>
+                                <input type="text" name="execution_timeline" class="form-control" placeholder="e.g. Within 1 month">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Location</label>
+                                <input type="text" name="location" class="form-control" placeholder="City, State">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Assign Lead To</label>
+                                <select name="assigned_to" class="form-select">
+                                    {% for sp in global_salespeople %}
+                                    <option value="{{ sp.id }}" {% if sp == user %}selected{% endif %}>{{ sp.get_full_name|default:sp.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Initial Notes</label>
+                                <textarea name="notes" class="form-control" rows="3" placeholder="Additional details..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" form="addLeadForm" class="btn btn-primary px-4">Create Lead</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom JS -->
+    <script src="{% static 'crm_ui/js/api.js' %}"></script>
+    
+    <script>
+        // Reset form when modal opens to ensure a fresh start
+        const addLeadModal = document.getElementById('addLeadModal');
+        if (addLeadModal) {
+            addLeadModal.addEventListener('show.bs.modal', function () {
+                resetLeadForm();
+            });
+        }
+
+        document.getElementById('sidebar-toggle')?.addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+
+        // Integrated Import Search & Autofill Logic
+        const importSearchInput = document.getElementById('globalImportSearch');
+        const importDropdown = document.getElementById('globalImportList');
+        const importItems = document.querySelectorAll('.global-import-item');
+
+        importSearchInput?.addEventListener('focus', function() {
+            if (importItems.length > 0) {
+                importDropdown.classList.add('show');
+            }
+        });
+
+        importSearchInput?.addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            let hasMatch = false;
+            
+            importItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                const isMatch = text.includes(term);
+                item.style.display = isMatch ? 'block' : 'none';
+                if (isMatch) hasMatch = true;
+            });
+            
+            if (hasMatch) {
+                importDropdown.classList.add('show');
+            } else {
+                importDropdown.classList.remove('show');
+            }
+        });
+
+        // Close dropdown on click outside
+        document.addEventListener('click', (e) => {
+            if (!importSearchInput?.contains(e.target) && !importDropdown?.contains(e.target)) {
+                importDropdown?.classList.remove('show');
+            }
+        });
+
+        // Selection logic
+        importItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const data = this.dataset;
+                const form = document.getElementById('addLeadForm');
+                
+                if (!form) return;
+
+                // Set values safely
+                const setVal = (sel, val) => {
+                    const el = form.querySelector(sel);
+                    if (el) el.value = val || '';
+                };
+
+                setVal('[name="name"]', data.name);
+                setVal('[name="phone"]', data.phone);
+                setVal('[name="email"]', data.email);
+                setVal('[name="location"]', data.location);
+                setVal('[name="budget"]', data.budget);
+                setVal('[name="property_type"]', data.propertyType);
+                setVal('[name="execution_timeline"]', data.executionTimeline);
+                
+                const importIdInput = document.getElementById('import_id_input');
+                if (importIdInput) importIdInput.value = data.id;
+
+                // Close dropdown and show status
+                importDropdown.classList.remove('show');
+                importSearchInput.value = data.name || data.phone;
+                importSearchInput.blur(); // Remove focus to ensure dropdown closes
+                document.getElementById('selectionStatus').classList.remove('d-none');
+            });
+        });
+
+        function resetLeadForm() {
+            const form = document.getElementById('addLeadForm');
+            form.reset();
+            document.getElementById('import_id_input').value = '';
+            document.getElementById('globalImportSearch').value = '';
+            const selectionStatus = document.getElementById('selectionStatus');
+            if (selectionStatus) selectionStatus.classList.add('d-none');
+            
+            // Re-show all items
+            importItems.forEach(item => item.style.display = 'block');
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

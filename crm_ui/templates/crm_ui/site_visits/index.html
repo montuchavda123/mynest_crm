@@ -1,0 +1,183 @@
+{% extends 'crm_ui/base.html' %}
+{% load static %}
+
+{% block title %}Site Visits | MyNest CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0 fw-bold">Site Visit Management</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary shadow-sm btn-sm px-4" data-bs-toggle="modal"
+            data-bs-target="#scheduleVisitModal">
+            <i class="fas fa-map-marker-alt me-2"></i> Schedule New Visit
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Active Visits List -->
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm overflow-hidden mb-4">
+            <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 fw-bold">Current & Upcoming Visits</h5>
+                <span class="badge bg-primary px-3 rounded-pill fw-normal">{{ site_visits|length }} Visits
+                    Scheduled</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="px-4 py-3 border-0">Visit Date & Time</th>
+                            <th class="py-3 border-0">Lead Name</th>
+                            <th class="py-3 border-0">Location</th>
+                            <th class="py-3 border-0 text-end px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for visit in site_visits %}
+                        <tr>
+                            <td class="px-4">
+                                <div class="fw-bold">{{ visit.date|date:"M d, Y" }}</div>
+                                <div class="text-xs text-muted">{{ visit.date|date:"h:i A" }}</div>
+                            </td>
+                            <td>
+                                <h6 class="mb-0 fw-bold">{{ visit.lead.name }}</h6>
+                                <small class="text-muted">ID: #LD{{ visit.lead.id|stringformat:"04d" }}</small>
+                            </td>
+                            <td>
+                                <div class="text-sm">{{ visit.lead.location }}</div>
+                            </td>
+                            <td class="text-end px-4">
+                                <button type="button" class="btn btn-sm btn-outline-primary px-3 open-feedback-modal" data-bs-toggle="modal"
+                                    data-bs-target="#addFeedbackModal"
+                                    data-visit-id="{{ visit.id }}"
+                                    data-lead-name="{{ visit.lead.name }}">
+                                    Add Feedback
+                                </button>
+                                <form action="{% url 'delete_site_visit' visit.id %}" method="POST" class="d-inline ms-2" onsubmit="return confirm('Delete this site visit?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger px-3">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                No site visits scheduled yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Visit Modal -->
+<div class="modal fade" id="scheduleVisitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 bg-light">
+                <h5 class="modal-title fw-bold">Schedule Site Visit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'add_site_visit' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Select Lead</label>
+                        <select name="lead" class="form-select" required>
+                            <option value="" selected disabled>Choose a lead...</option>
+                            {% for lead in leads %}
+                            <option value="{{ lead.id }}">{{ lead.name }} (#LD{{ lead.id|stringformat:"04d" }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Date</label>
+                            <input type="date" name="date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Time</label>
+                            <input type="time" name="time" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Site Address</label>
+                        <textarea name="address" class="form-control" rows="2" placeholder="Full address of the site..." required></textarea>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold">Add Task/Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Specific check items..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-primary w-100 py-2">Confirm Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Feedback Modal -->
+<div class="modal fade" id="addFeedbackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 bg-light">
+                <h5 class="modal-title fw-bold">Site Visit Feedback</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'add_site_visit_feedback' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="visit_id" id="feedbackVisitId">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Overall Impression</label>
+                        <select name="overall_impression" class="form-select" required>
+                            <option value="" selected disabled>Select impression</option>
+                            <option value="Very Positive">Very Positive</option>
+                            <option value="Positive">Positive</option>
+                            <option value="Neutral">Neutral</option>
+                            <option value="Negative">Negative</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Detailed Feedback</label>
+                        <textarea name="detailed_feedback" class="form-control" rows="3"
+                            placeholder="Explain the customer's response and site condition..." required></textarea>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold">Next Action Step</label>
+                        <input type="text" name="next_action" class="form-control" placeholder="e.g., Send revised quote">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-primary w-100 py-2">Submit Feedback</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const feedbackButtons = document.querySelectorAll('.open-feedback-modal');
+    const feedbackVisitId = document.getElementById('feedbackVisitId');
+    const feedbackModalTitle = document.getElementById('feedbackModalTitle');
+
+    feedbackButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const visitId = this.dataset.visitId;
+            const leadName = this.dataset.leadName || 'Site Visit';
+            if (feedbackVisitId) {
+                feedbackVisitId.value = visitId;
+            }
+            if (feedbackModalTitle) {
+                feedbackModalTitle.textContent = `Site Visit Feedback for ${leadName}`;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

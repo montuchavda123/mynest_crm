@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Approval | MyNest CRM</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .pending-card {
+            width: 100%;
+            max-width: 480px;
+            padding: 3rem 2rem;
+            border-radius: 1.5rem;
+            background: #ffffff;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+        .pending-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #f59e0b;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+        }
+        .btn-outline-primary {
+            border-color: #6366f1;
+            color: #6366f1;
+        }
+        .btn-outline-primary:hover {
+            background: #6366f1;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="pending-card">
+        <div class="pending-icon">
+            <i class="fas fa-hourglass-half"></i>
+        </div>
+        <h3 class="fw-bold mb-2">Account Pending Approval</h3>
+        <p class="text-muted mb-4">
+            Welcome, <strong>{{ user.get_full_name|default:user.username }}</strong>!<br>
+            Your account has been created successfully, but it requires admin approval before you can access the CRM system.
+        </p>
+        <div class="bg-light rounded-3 p-3 mb-4">
+            <div class="d-flex justify-content-between text-muted small mb-1">
+                <span>Account:</span>
+                <span class="fw-bold text-dark">{{ user.email|default:user.username }}</span>
+            </div>
+            <div class="d-flex justify-content-between text-muted small mb-1">
+                <span>Status:</span>
+                <span class="badge bg-warning text-dark">Pending</span>
+            </div>
+            <div class="d-flex justify-content-between text-muted small">
+                <span>Joined:</span>
+                <span class="fw-bold text-dark">{{ user.date_joined|date:"M d, Y h:i A" }}</span>
+            </div>
+        </div>
+        <p class="text-muted small mb-4">
+            <i class="fas fa-info-circle me-1"></i>
+            An administrator will review your account shortly. You'll be able to access the dashboard once approved.
+        </p>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary px-4">
+                <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+            </button>
+        </form>
+    </div>
+</body>
+</html>

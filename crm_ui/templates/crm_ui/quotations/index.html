@@ -1,0 +1,117 @@
+{% extends 'crm_ui/base.html' %}
+{% load static %}
+
+{% block title %}Quotations | MyNest CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0 fw-bold">Quotations & Billing</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary shadow-sm btn-sm px-4" data-bs-toggle="modal" data-bs-target="#createDynamicQuotationModal">
+            <i class="fas fa-file-invoice-dollar me-2"></i> Create Quotation
+        </button>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold">Dynamic Quotations (PDF Structure Flow)</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="px-4 py-3 border-0">Quotation No.</th>
+                            <th class="py-3 border-0">Client</th>
+                            <th class="py-3 border-0">Project</th>
+                            <th class="py-3 border-0">Date</th>
+                            <th class="py-3 border-0">Status</th>
+                            <th class="py-3 border-0 text-end px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dq in dynamic_quotations %}
+                        <tr>
+                            <td class="px-4 fw-bold text-primary">{{ dq.quotation_number }}</td>
+                            <td>
+                                <h6 class="mb-0 fw-bold">{{ dq.client_name }}</h6>
+                                <small class="text-muted">{{ dq.client_phone }}</small>
+                            </td>
+                            <td>{{ dq.project_type|default:"-" }}<br><small class="text-muted">{{ dq.project_location|default:"-" }}</small></td>
+                            <td>{{ dq.quotation_date|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="badge {% if dq.status == 'APPROVED' %}bg-success-subtle text-success{% elif dq.status == 'PENDING_APPROVAL' %}bg-warning-subtle text-warning{% elif dq.status == 'REJECTED' %}bg-danger-subtle text-danger{% else %}bg-secondary-subtle text-secondary{% endif %} px-3 py-2 rounded-pill small">
+                                    {{ dq.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="text-end px-4">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-bars"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li><a class="dropdown-item" href="{% url 'dynamic_quotation:quotation_detail' dq.id %}"><i class="fas fa-eye me-2 text-secondary"></i>View</a></li>
+                                        <li><a class="dropdown-item" href="{% url 'dynamic_quotation:quotation_download_pdf' dq.id %}"><i class="fas fa-download me-2 text-primary"></i>Download PDF</a></li>
+                                        {% if dq.status == 'DRAFT' or dq.status == 'PENDING_APPROVAL' %}
+                                        <li><a class="dropdown-item text-success" href="{% url 'dynamic_quotation:quotation_approve' dq.id %}"><i class="fas fa-check me-2"></i>Approve</a></li>
+                                        <li><a class="dropdown-item text-danger" href="{% url 'dynamic_quotation:quotation_reject' dq.id %}"><i class="fas fa-times me-2"></i>Reject</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-center py-4 text-muted">No dynamic quotations yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="createDynamicQuotationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 bg-light p-4">
+                <h5 class="modal-title fw-bold">Create Dynamic Quotation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <label class="form-label small fw-bold">Select Lead</label>
+                <select id="dynamicQuotationLeadSelect" class="form-select">
+                    <option value="" selected disabled>Choose lead...</option>
+                    {% for lead in leads %}
+                    <option value="{{ lead.id }}">{{ lead.name }} (#LD{{ lead.id|stringformat:"04d" }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4" id="openDynamicQuotationBtn">Continue</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const openDynamicQuotationBtn = document.getElementById('openDynamicQuotationBtn');
+    const dynamicQuotationLeadSelect = document.getElementById('dynamicQuotationLeadSelect');
+    if (openDynamicQuotationBtn && dynamicQuotationLeadSelect) {
+        openDynamicQuotationBtn.addEventListener('click', function() {
+            const leadId = dynamicQuotationLeadSelect.value;
+            if (!leadId) {
+                alert('Please select a lead first.');
+                return;
+            }
+            window.location.href = `/quotation/lead/${leadId}/create/`;
+        });
+    }
+});
+</script>
+{% endblock %}

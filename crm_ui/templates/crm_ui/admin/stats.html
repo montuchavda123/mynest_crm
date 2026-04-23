@@ -1,0 +1,278 @@
+{% extends 'crm_ui/admin/admin_base.html' %}
+
+{% block title %}Statistics | Admin Panel{% endblock %}
+{% block page_title %}System Statistics{% endblock %}
+
+{% block content %}
+<!-- KPI Cards Row 1 -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-2 col-md-4 col-6">
+        <div class="card admin-stat-card h-100">
+            <div class="card-body p-3">
+                <div class="stat-icon purple mb-2"><i class="fas fa-users"></i></div>
+                <div class="h4 fw-bold mb-0">{{ total_users }}</div>
+                <div class="text-muted small">Total Users</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-6">
+        <div class="card admin-stat-card h-100">
+            <div class="card-body p-3">
+                <div class="stat-icon amber mb-2"><i class="fas fa-clock"></i></div>
+                <div class="h4 fw-bold mb-0">{{ pending_users }}</div>
+                <div class="text-muted small">Pending Users</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-6">
+        <div class="card admin-stat-card h-100">
+            <div class="card-body p-3">
+                <div class="stat-icon blue mb-2"><i class="fas fa-address-book"></i></div>
+                <div class="h4 fw-bold mb-0">{{ total_leads }}</div>
+                <div class="text-muted small">Total Leads</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-6">
+        <div class="card admin-stat-card h-100">
+            <div class="card-body p-3">
+                <div class="stat-icon teal mb-2"><i class="fas fa-calendar-check"></i></div>
+                <div class="h4 fw-bold mb-0">{{ total_meetings }}</div>
+                <div class="text-muted small">Meetings</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-6">
+        <div class="card admin-stat-card h-100">
+            <div class="card-body p-3">
+                <div class="stat-icon green mb-2"><i class="fas fa-file-invoice-dollar"></i></div>
+                <div class="h4 fw-bold mb-0">{{ total_quotations }}</div>
+                <div class="text-muted small">Quotations</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-6">
+        <div class="card admin-stat-card h-100">
+            <div class="card-body p-3">
+                <div class="stat-icon red mb-2"><i class="fas fa-percentage"></i></div>
+                <div class="h4 fw-bold mb-0">{{ conversion_rate }}%</div>
+                <div class="text-muted small">Conversion Rate</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deal Status Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card admin-stat-card border-start border-success border-4">
+            <div class="card-body p-3 d-flex align-items-center gap-3">
+                <div class="stat-icon green"><i class="fas fa-handshake"></i></div>
+                <div>
+                    <div class="h4 fw-bold mb-0 text-success">{{ closed_deals }}</div>
+                    <div class="text-muted small">Closed Deals</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card admin-stat-card border-start border-danger border-4">
+            <div class="card-body p-3 d-flex align-items-center gap-3">
+                <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
+                <div>
+                    <div class="h4 fw-bold mb-0 text-danger">{{ lost_deals }}</div>
+                    <div class="text-muted small">Lost Deals</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card admin-stat-card border-start border-primary border-4">
+            <div class="card-body p-3 d-flex align-items-center gap-3">
+                <div class="stat-icon blue"><i class="fas fa-user-check"></i></div>
+                <div>
+                    <div class="h4 fw-bold mb-0 text-primary">{{ approved_users }}</div>
+                    <div class="text-muted small">Approved Users</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card admin-stat-card border-start border-warning border-4">
+            <div class="card-body p-3 d-flex align-items-center gap-3">
+                <div class="stat-icon amber"><i class="fas fa-user-plus"></i></div>
+                <div>
+                    <div class="h4 fw-bold mb-0 text-warning">{{ pending_users }}</div>
+                    <div class="text-muted small">Pending Approval</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="row g-4 mb-4">
+    <!-- Lead Pipeline -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="border-radius: 1rem;">
+            <div class="card-header bg-white border-0 py-3 px-4" style="border-radius: 1rem 1rem 0 0;">
+                <h6 class="card-title mb-0 fw-bold"><i class="fas fa-chart-bar me-2 text-primary"></i>Lead Pipeline</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px;">
+                    <canvas id="pipelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Source Distribution -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="border-radius: 1rem;">
+            <div class="card-header bg-white border-0 py-3 px-4" style="border-radius: 1rem 1rem 0 0;">
+                <h6 class="card-title mb-0 fw-bold"><i class="fas fa-chart-pie me-2 text-success"></i>Lead Sources</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px;">
+                    <canvas id="sourceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 30-Day Lead Trend -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm" style="border-radius: 1rem;">
+            <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center" style="border-radius: 1rem 1rem 0 0;">
+                <h6 class="card-title mb-0 fw-bold"><i class="fas fa-chart-line me-2 text-info"></i>30-Day Lead Trend</h6>
+                <span class="badge bg-primary-subtle text-primary border-0 small">Growth Analysis</span>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px;">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Registrations -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm" style="border-radius: 1rem;">
+            <div class="card-header bg-white border-0 py-3 px-4" style="border-radius: 1rem 1rem 0 0;">
+                <h6 class="card-title mb-0 fw-bold"><i class="fas fa-user-plus me-2 text-warning"></i>User Registrations</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px;">
+                    <canvas id="userRegChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15, font: { size: 11, family: 'Outfit' } } }
+        }
+    };
+
+    // 1. Pipeline Bar Chart
+    new Chart(document.getElementById('pipelineChart'), {
+        type: 'bar',
+        data: {
+            labels: ['New', 'Contacted', 'Missed', 'Meeting', 'Quotation', 'Discussion', 'Closed', 'Lost'],
+            datasets: [{
+                label: 'Leads',
+                data: [
+                    {{ status_summary.NEW }},
+                    {{ status_summary.CONTACTED }},
+                    {{ status_summary.MISSED_CALL }},
+                    {{ status_summary.MEETING }},
+                    {{ status_summary.QUOTATION }},
+                    {{ status_summary.DISCUSSION }},
+                    {{ status_summary.CLOSED }},
+                    {{ status_summary.LOST }}
+                ],
+                backgroundColor: [
+                    'rgba(99,102,241,0.7)', 'rgba(59,130,246,0.7)', 'rgba(239,68,68,0.7)',
+                    'rgba(245,158,11,0.7)', 'rgba(139,92,246,0.7)', 'rgba(20,184,166,0.7)',
+                    'rgba(16,185,129,0.7)', 'rgba(107,114,128,0.7)'
+                ],
+                borderRadius: 6
+            }]
+        },
+        options: { ...chartDefaults, plugins: { legend: { display: false } } }
+    });
+
+    // 2. Source Doughnut
+    new Chart(document.getElementById('sourceChart'), {
+        type: 'doughnut',
+        data: {
+            labels: [{% for k in source_summary.keys %}'{{ k|title }}',{% endfor %}],
+            datasets: [{
+                data: [{% for v in source_summary.values %}{{ v }},{% endfor %}],
+                backgroundColor: ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'],
+                borderWidth: 0
+            }]
+        },
+        options: { ...chartDefaults, cutout: '65%' }
+    });
+
+    // 3. 30-Day Trend Line
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: [{% for label in trend_labels %}'{{ label }}',{% endfor %}],
+            datasets: [{
+                label: 'New Leads',
+                data: [{% for val in trend_data %}{{ val }},{% endfor %}],
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.08)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 2,
+                pointBackgroundColor: '#fff',
+                pointBorderWidth: 2,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 10 } } }
+            }
+        }
+    });
+
+    // 4. User Registrations Bar
+    new Chart(document.getElementById('userRegChart'), {
+        type: 'bar',
+        data: {
+            labels: [{% for label in trend_labels %}'{{ label }}',{% endfor %}],
+            datasets: [{
+                label: 'New Users',
+                data: [{% for val in user_reg_data %}{{ val }},{% endfor %}],
+                backgroundColor: 'rgba(245, 158, 11, 0.6)',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: { display: false }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

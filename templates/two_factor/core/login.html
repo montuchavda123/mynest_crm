@@ -1,0 +1,108 @@
+{% extends "two_factor/_base.html" %}
+{% load i18n %}
+{% load two_factor_tags %}
+
+{% block extra_css %}
+<style>
+    .two-factor-form .form-row { margin-bottom: 1.25rem; }
+    .two-factor-form label { font-weight: 600; color: var(--text); margin-bottom: 0.5rem; display: block; }
+    .two-factor-form input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="submit"]) {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1.5px solid var(--border);
+        border-radius: 0.75rem;
+        transition: all 0.2s;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+    }
+    .two-factor-form input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+        outline: none;
+    }
+    .two-factor-form select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1.5px solid var(--border);
+        border-radius: 0.75rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+    }
+    .btn-auth { margin-top: 1.5rem; }
+    .auth-footer { margin-top: 1.5rem; font-size: 0.9rem; }
+    .errorlist { color: #dc3545; font-size: 0.85rem; padding-left: 0; list-style: none; margin-bottom: 1rem; }
+    .step-info { background: var(--primary-light); border: 1px solid rgba(99,102,241,0.15); border-radius: 0.75rem; padding: 0.75rem 1rem; font-size: 0.85rem; color: var(--primary-dark); margin-bottom: 1.25rem; }
+    .step-info i { margin-right: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <h3>{% trans "Secure Login" %}</h3>
+    <p class="subtitle">{% trans "Complete the security verification to access your CRM dashboard." %}</p>
+
+    <form action="" method="post" class="two-factor-form">
+        {% csrf_token %}
+        {{ wizard.management_form }}
+
+        {% if wizard.steps.current == 'auth' %}
+            <div class="step-info">
+                <i class="fas fa-shield-alt"></i> {% trans "Step 1: Enter your credentials" %}
+            </div>
+        {% elif wizard.steps.current == 'token' %}
+            <div class="step-info">
+                <i class="fas fa-key"></i> {% trans "Step 2: Enter the verification code from your authenticator app" %}
+            </div>
+        {% elif wizard.steps.current == 'backup' %}
+            <div class="step-info">
+                <i class="fas fa-life-ring"></i> {% trans "Enter one of your backup tokens" %}
+            </div>
+        {% endif %}
+
+        {% if wizard.form.non_field_errors %}
+            <div class="alert alert-danger auth-alert" style="border-radius: 0.75rem; font-size: 0.85rem;">
+                {{ wizard.form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        {% for field in wizard.form %}
+            {% if field.is_hidden %}
+                {{ field }}
+            {% else %}
+                <div class="form-row {% if field.errors %}has-error{% endif %}">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}
+                        <div class="small text-muted mt-1">{{ field.help_text|safe }}</div>
+                    {% endif %}
+                    {% if field.errors %}
+                        {{ field.errors }}
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <button type="submit" class="btn-auth">
+            {% if wizard.steps.current == 'auth' %}
+                <i class="fas fa-arrow-right me-2"></i>{% trans "Sign In" %}
+            {% elif wizard.steps.current == 'token' %}
+                <i class="fas fa-check-circle me-2"></i>{% trans "Verify & Sign In" %}
+            {% else %}
+                <i class="fas fa-arrow-right me-2"></i>{% trans "Continue" %}
+            {% endif %}
+        </button>
+
+        {% if wizard.steps.prev %}
+            <div class="text-center mt-3">
+                <button name="wizard_goto_step" type="submit" value="{{ wizard.steps.prev }}" class="btn btn-link text-muted small shadow-none" style="text-decoration: none;">
+                    <i class="fas fa-arrow-left me-1"></i> {% trans "Back" %}
+                </button>
+            </div>
+        {% endif %}
+    </form>
+
+    <div class="auth-footer">
+        {% if wizard.steps.current == 'auth' %}
+            {% trans "Don't have an account?" %} <a href="{% url 'signup' %}" class="auth-link">{% trans "Create one" %}</a>
+        {% endif %}
+    </div>
+{% endblock %}
